@@ -50,13 +50,19 @@ _PROVIDER_CONFIG = {
         "default_model": "llama3.2",
         "requires_api_key": False,
     },
+    "ari_cloud": {
+        "base_url": "https://teambugbusters00-ari-backend.hf.space/v1",
+        "label": "Ari Cloud (Free Hosted)",
+        "default_model": "llama-3.3-70b-versatile",
+        "requires_api_key": False,
+    },
 }
 
 _KEY_MAP = {
     "groq": "groq_api_key", "openai": "openai_api_key", "anthropic": "anthropic_api_key",
     "mistral": "mistral_api_key", "gemini": "gemini_api_key",
     "openrouter": "openrouter_api_key", "nvidia_nim": "nvidia_nim_api_key",
-    "ollama": "",
+    "ollama": "", "ari_cloud": "",
 }
 
 
@@ -69,4 +75,6 @@ def get_provider_configs(settings):
         provider: {**config, "requires_api_key": False}
         for provider, config in get_custom_providers(settings).items()
     })
+    if 'ari_cloud' in configs and settings.get('ari_cloud_base_url'):
+        configs['ari_cloud']['base_url'] = settings['ari_cloud_base_url']
     return configs

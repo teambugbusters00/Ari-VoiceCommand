@@ -1,10 +1,10 @@
 """
-Whisper STT 워커 프로세스.
-메인 프로세스와 stdin/stdout IPC로 통신:
-  - IPC 연결 시 "PREPARING\\n", 모델 준비 완료 시 "READY\\n" 출력
-  - 입력: base64 WAV와 인식 모드가 담긴 JSON 한 줄 (구형 base64 입력도 허용)
-  - 출력: 전사 텍스트 한 줄, 결과 없으면 "__NONE__"
-  - "QUIT" 수신 시 종료
+Whisper STT worker process.
+Communicates with the main process via stdin/stdout IPC:
+  - Outputs "PREPARING\n" on IPC connect, "READY\n" when model is ready
+  - Input: single JSON line with base64 WAV and recognition mode
+  - Output: single transcribed line, or "__NONE__" if no speech
+  - Exits on "QUIT"
 """
 import base64
 import io
@@ -15,7 +15,7 @@ import subprocess
 import sys
 import wave
 
-# 메인 프로세스와 동일한 KMP 설정 상속 (혹은 기본 적용)
+# Inherit OpenMP / KMP settings
 os.environ.setdefault("KMP_DUPLICATE_LIB_OK", "TRUE")
 
 
@@ -24,9 +24,9 @@ WORKER_SELF_TEST_ARGUMENT = "--ari-whisper-worker-self-test"
 
 
 def normalize_language(language: str = "ko") -> str:
-    """faster-whisper에서 지원하는 음성 언어 태그를 정규화한다."""
+    """Normalize speech language tag for faster-whisper (supports en, hi, ko, ja)."""
     value = str(language or "ko").strip().lower().replace("_", "-").split("-", 1)[0]
-    return value if value in {"ko", "en", "ja"} else "ko"
+    return value if value in {"ko", "en", "ja", "hi"} else "ko"
 
 
 def _is_bundled_executable() -> bool:

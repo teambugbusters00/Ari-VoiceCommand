@@ -1,15 +1,15 @@
 """
-Ari 국제화(i18n) 번역 엔진.
+Ari internationalization (i18n) translation engine.
 
-사용법:
+Usage:
     from i18n.translator import _, ngettext, set_language, get_language
 
-    _("설정")
-    _("주의: {msg}", msg=report.text)
-    ngettext("{n}개 파일", "{n}개 파일들", n, n=n)
+    _("Settings")
+    _("Warning: {msg}", msg=report.text)
+    ngettext("{n} file", "{n} files", n, n=n)
 
-주의: _()는 반드시 함수/메서드 내부에서만 호출할 것.
-      모듈 레벨 상수에 사용하면 init() 전에 평가되어 번역 미적용.
+Note: _() must only be called inside functions/methods.
+      Using it at module level evaluates before init() and translations won't apply.
 """
 from __future__ import annotations
 
@@ -22,8 +22,8 @@ from typing import Optional
 
 _LOCALE_DIR = os.path.join(os.path.dirname(__file__), "locales")
 _DOMAIN = "ari"
-_DEFAULT_LANG = "ko"
-_SUPPORTED = {"ko", "en", "ja"}
+_DEFAULT_LANG = "en"
+_SUPPORTED = {"en", "hi"}
 
 _current_lang: str = _DEFAULT_LANG
 _translation: Optional[gettext.GNUTranslations] = None
@@ -34,13 +34,13 @@ logger = logging.getLogger(__name__)
 
 
 def on_language_changed(callback) -> None:
-    """언어 변경 시 호출될 콜백을 등록한다."""
+    """Register a callback to be called when the language changes."""
     if callback not in _language_change_callbacks:
         _language_change_callbacks.append(callback)
 
 
 def remove_language_changed_callback(callback) -> None:
-    """등록된 언어 변경 콜백을 제거한다."""
+    """Remove a registered language change callback."""
     try:
         _language_change_callbacks.remove(callback)
     except ValueError:
@@ -64,7 +64,7 @@ def _load(lang: str) -> gettext.GNUTranslations:
 
 
 def init(lang: Optional[str] = None) -> None:
-    """앱 시작 시 한 번 호출. lang이 None이면 settings에서 읽음."""
+    """Call once at app startup. If lang is None, reads from settings."""
     global _current_lang, _translation
     if lang is None:
         try:
@@ -86,7 +86,7 @@ def init(lang: Optional[str] = None) -> None:
 
 
 def set_language(lang: str) -> None:
-    """런타임 언어 전환. 등록된 콜백을 통해 UI 핫로드."""
+    """Switch language at runtime. Registered callbacks enable UI hot-reload."""
     if lang not in _SUPPORTED:
         logger.warning("[i18n] Unsupported language: %s", lang)
         return

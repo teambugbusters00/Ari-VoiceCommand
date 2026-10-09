@@ -1,4 +1,4 @@
-﻿"""애플리케이션 전역 상태와 음성/TTS 오케스트레이션 헬퍼."""
+"""애플리케이션 전역 상태와 음성/TTS 오케스트레이션 헬퍼."""
 
 import _ctypes
 import logging
@@ -61,7 +61,7 @@ class AppState:
         self.game_mode = False
         self.last_bubble_signature = ("", 0.0)
         self.listening_indicator_active = False
-        self.listening_indicator_text = _("말씀해주세요")
+        self.listening_indicator_text = None
         self.tts_resume_guard_until = 0.0
         self.active_conversation_response = ""
         self.active_response_lock = threading.Lock()
@@ -418,9 +418,15 @@ def _show_tts_bubble(text, duration: int = 0):
         _state.character_widget.say(display_text, duration=duration)
 
 
+def _listening_text() -> str:
+    if _state.listening_indicator_text:
+        return _state.listening_indicator_text
+    return _("말씀해주세요")
+
+
 def _show_listening_bubble() -> None:
     if _state.character_widget:
-        _state.character_widget.say(_state.listening_indicator_text, duration=0)
+        _state.character_widget.say(_listening_text(), duration=0)
 
 
 def set_listening_indicator(active: bool, text: str | None = None) -> None:

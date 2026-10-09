@@ -2064,20 +2064,22 @@ class LLMProvider:
             logging.debug("[LLMProvider] 언어 설정 조회 실패, ko 기본값 사용: %s", exc)
             lang = "ko"
         _BASE_PROMPT = {
-            "ko": "당신은 AI 어시스턴트 아리입니다.",
             "en": "You are Ari, an AI assistant.",
+            "hi": "आप एआई असिस्टेंट अरी (Ari) हैं।",
+            "ko": "당신은 AI 어시스턴트 아리입니다.",
             "ja": "あなたはAIアシスタントのAriです。",
         }
         _LANG_INSTRUCTION = {
-            "ko": "항상 한국어로 응답하세요.",
             "en": "Always respond in English.",
+            "hi": "हमेशा हिंदी में उत्तर दें। (Always respond in Hindi.)",
+            "ko": "항상 한국어로 응답하세요.",
             "ja": "常に日本語で応答してください。",
         }
         parts: List[str] = []
-        base_prompt = self.system_prompt or _BASE_PROMPT.get(lang, _BASE_PROMPT["ko"])
+        base_prompt = self.system_prompt or _BASE_PROMPT.get(lang, _BASE_PROMPT["en"])
         parts.append(self.rp_generator.build_system_prompt(base_prompt))
         parts.append(_get_tool_instruction())
-        parts.append(_LANG_INSTRUCTION.get(lang, _LANG_INSTRUCTION["ko"]))
+        parts.append(_LANG_INSTRUCTION.get(lang, _LANG_INSTRUCTION["en"]))
         time_prompt = ""
         if include_context:
             try:

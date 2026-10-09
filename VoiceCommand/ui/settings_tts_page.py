@@ -360,12 +360,15 @@ class _TTSSettingsPage(QWidget):
         edgel.addWidget(QLabel(_("목소리 선택:")))
         self.edge_voice_combo = QComboBox()
         for vid, vlbl in [
-            ("ko-KR-SunHiNeural", _("SunHi (여성)")),
-            ("ko-KR-InJoonNeural", _("InJoon (남성)")),
-            ("ko-KR-HyunsuNeural", _("Hyunsu (남성)")),
+            ("en-US-JennyNeural", "Jenny (English - US, Female)"),
+            ("en-US-GuyNeural", "Guy (English - US, Male)"),
+            ("en-IN-NeerjaNeural", "Neerja (English - India, Female)"),
+            ("en-IN-PrabhatNeural", "Prabhat (English - India, Male)"),
+            ("hi-IN-SwaraNeural", "Swara (Hindi - India, Female)"),
+            ("hi-IN-MadhurNeural", "Madhur (Hindi - India, Male)"),
         ]:
             self.edge_voice_combo.addItem(vlbl, vid)
-        self._set_combo(self.edge_voice_combo, self._settings.get("edge_tts_voice", "ko-KR-SunHiNeural"))
+        self._set_combo(self.edge_voice_combo, self._settings.get("edge_tts_voice", "en-US-JennyNeural"))
         edgel.addWidget(self.edge_voice_combo)
         edgel.addWidget(QLabel(_("속도 (예: +0%, -10%):")))
         self.edge_rate_input = QLineEdit(self._settings.get("edge_tts_rate", "+0%"))

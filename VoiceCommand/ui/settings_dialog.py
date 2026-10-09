@@ -88,7 +88,7 @@ class SettingsDialog(QDialog):
         "groq_api_key", "openai_api_key", "anthropic_api_key", "mistral_api_key",
         "gemini_api_key", "openrouter_api_key", "nvidia_nim_api_key", "system_prompt", "personality",
         "scenario", "history_instruction", "response_verbosity",
-        "personality_examples_en", "personality_examples_ja",
+        "personality_examples_en", "personality_examples_hi", "personality_examples_ja",
     }
     THEME_KEYS = {"ui_theme_preset", "ui_theme_scale", "ui_font_family"}
     CHARACTER_KEYS = {"character_scale", "character_ground_offset"}
@@ -237,7 +237,7 @@ class SettingsDialog(QDialog):
         rp_fields = [
             ("personality_input",  _("성격:"),           "personality",         _("예) 상냥하고 귀여운 AI 비서")),
             ("examples_en_input",  _("영어 예시 대사:"), "personality_examples_en", ""),
-            ("examples_ja_input",  _("일본어 예시 대사:"), "personality_examples_ja", ""),
+            ("examples_hi_input",  "Hindi Examples (हिन्दी):", "personality_examples_hi", ""),
             ("scenario_input",     _("시나리오:"),        "scenario",            _("예) 주인님을 보좌하는 역할극")),
             ("system_input",       _("시스템 프롬프트:"), "system_prompt",       _("AI에게 직접 전달할 시스템 지시문")),
             ("history_input",      _("대화 지침:"),       "history_instruction", _("이전 대화를 참고할 때의 태도")),
@@ -250,10 +250,12 @@ class SettingsDialog(QDialog):
             edit.setPlainText(self.settings.get(key, ""))
             edit.setPlaceholderText(ph)
             edit.setMinimumHeight(
-                56 if key in {"personality_examples_en", "personality_examples_ja"} else 90
+                56 if key in {"personality_examples_en", "personality_examples_hi", "personality_examples_ja"} else 90
             )
             setattr(self, attr, edit)
             gvbox.addWidget(edit, 1)
+
+        self.examples_ja_input = self.examples_hi_input
 
         gvbox.addWidget(QLabel(_("응답 말수:")))
         self.verbosity_combo = QComboBox()
@@ -447,9 +449,8 @@ class SettingsDialog(QDialog):
         lvbox = QVBoxLayout(lang_group)
         lvbox.addWidget(QLabel(_("인터페이스 언어:")))
         self.lang_combo = QComboBox()
-        self.lang_combo.addItem("한국어", "ko")
         self.lang_combo.addItem("English", "en")
-        self.lang_combo.addItem("日本語", "ja")
+        self.lang_combo.addItem("हिंदी (Hindi)", "hi")
         self._set_combo(self.lang_combo, get_language())
         lvbox.addWidget(self.lang_combo)
         vbox.addWidget(lang_group)
@@ -797,7 +798,8 @@ class SettingsDialog(QDialog):
             # RP
             "personality": self.personality_input.toPlainText().strip(),
             "personality_examples_en": self.examples_en_input.toPlainText().strip(),
-            "personality_examples_ja": self.examples_ja_input.toPlainText().strip(),
+            "personality_examples_hi": self.examples_hi_input.toPlainText().strip() if hasattr(self, "examples_hi_input") else "",
+            "personality_examples_ja": self.examples_ja_input.toPlainText().strip() if hasattr(self, "examples_ja_input") else "",
             "scenario": self.scenario_input.toPlainText().strip(),
             "system_prompt": self.system_input.toPlainText().strip(),
             "history_instruction": self.history_input.toPlainText().strip(),

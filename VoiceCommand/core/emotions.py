@@ -143,6 +143,7 @@ _EMOTION_TAGS = " ".join(f"({name})" for name in EMOTION_NAMES)
 _EMOTION_INSTRUCTIONS = {
     "ko": "[감정 표현]\n응답 맨 앞에 감정 태그를 자연스럽게 붙이세요: " + _EMOTION_TAGS,
     "en": "[Emotion Tags]\nStart your response with a Korean emotion tag: " + _EMOTION_TAGS,
+    "hi": "[Emotion Tags]\nअपनी प्रतिक्रिया के प्रारंभ में भाव टैग जोड़ें: " + _EMOTION_TAGS,
     "ja": "[感情タグ]\n返答の先頭に韓国語の感情タグを付けてください: " + _EMOTION_TAGS,
 }
 

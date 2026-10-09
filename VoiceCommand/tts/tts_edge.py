@@ -1,7 +1,7 @@
 """
-Microsoft Edge TTS 제공자 — 무료, API 키 불필요
-문장 단위로 합성하고, 앞 문장을 재생하는 동안 다음 문장을 합성한다.
-Fish Audio / CosyVoice3와 동일한 인터페이스: speak() / playback_finished / cleanup()
+Microsoft Edge TTS provider — free, no API key required
+Synthesizes sentence by sentence, pipelining synthesis and playback.
+Same interface as other TTS engines: speak() / playback_finished / cleanup()
 """
 
 import asyncio
@@ -20,12 +20,16 @@ from core.emotions import DEFAULT_EMOTION, get_emotion_details
 from tts.pcm_playback import write_pcm_chunks
 from tts.tts_cache import DEFAULT_MAX_BYTES, DiskTTSAudioCache, build_tts_cache_key
 
-KO_VOICES = [
-    ("ko-KR-SunHiNeural", "SunHi (여성, 기본)"),
-    ("ko-KR-InJoonNeural", "InJoon (남성)"),
-    ("ko-KR-HyunsuNeural", "Hyunsu (남성, 다중감정)"),
+VOICES = [
+    ("en-US-JennyNeural", "Jenny (English - US, Female, Default)"),
+    ("en-US-GuyNeural", "Guy (English - US, Male)"),
+    ("en-IN-NeerjaNeural", "Neerja (English - India, Female)"),
+    ("en-IN-PrabhatNeural", "Prabhat (English - India, Male)"),
+    ("hi-IN-SwaraNeural", "Swara (Hindi - India, Female)"),
+    ("hi-IN-MadhurNeural", "Madhur (Hindi - India, Male)"),
 ]
-DEFAULT_VOICE = "ko-KR-SunHiNeural"
+KO_VOICES = VOICES
+DEFAULT_VOICE = "en-US-JennyNeural"
 _SAMPLE_RATE = 22050
 _SENTENCE_TIMEOUT_SECONDS = 10.0
 _SENTENCE_ENDINGS = frozenset(".!?。！？…")
@@ -161,7 +165,7 @@ class EdgeTTS(QObject):
         self._cache_warmup_cancel = threading.Event()
         self._language_change_callback = self._on_language_changed
         self._language_callback_registered = False
-        logging.info("Edge TTS 초기화 완료 (voice=%s)", voice)
+        logging.info("Edge TTS initialized (voice=%s)", voice)
 
     @staticmethod
     def _fixed_message_texts() -> frozenset[str]:
@@ -195,10 +199,19 @@ class EdgeTTS(QObject):
         pitch = f"{pitch_offset:+d}Hz"
         return rate, pitch
 
+    def _voice_for_text(self, text: str) -> str:
+        # If text contains Devanagari Hindi characters (\u0900-\u097f), pick appropriate Hindi voice
+        if any("\u0900" <= char <= "\u097f" for char in text):
+            if "Guy" in self.voice or "Madhur" in self.voice or "Prabhat" in self.voice:
+                return "hi-IN-MadhurNeural"
+            return "hi-IN-SwaraNeural"
+        return self.voice
+
     def _cache_key(self, text: str, emotion: str, language: str) -> str:
         rate, pitch = self._prosody(emotion)
+        voice = self._voice_for_text(text)
         return build_tts_cache_key(
-            "edge", self.voice, rate, self.volume, emotion, language, text,
+            "edge", voice, rate, self.volume, emotion, language, text,
             pitch=pitch,
         )
 
@@ -206,8 +219,9 @@ class EdgeTTS(QObject):
         import edge_tts
 
         rate, pitch = self._prosody(emotion)
+        voice = self._voice_for_text(text)
         communicate = edge_tts.Communicate(
-            text, self.voice, rate=rate, volume=self.volume, pitch=pitch
+            text, voice, rate=rate, volume=self.volume, pitch=pitch
         )
         chunks = []
         async for item in communicate.stream():
@@ -257,7 +271,7 @@ class EdgeTTS(QObject):
         if cache_key is not None:
             cached_pcm = self._audio_cache.get(cache_key)
             if cached_pcm is not None:
-                logging.debug("Edge TTS 고정 문구 캐시 적중")
+                logging.debug("Edge TTS fixed phrase cache hit")
                 return cached_pcm
 
         audio_data = loop.run_until_complete(
@@ -311,13 +325,13 @@ class EdgeTTS(QObject):
                 except asyncio.TimeoutError:
                     synthesis_failures.append((index, "TimeoutError"))
                     logging.warning(
-                        "Edge TTS 문장 합성 타임아웃 (%d/%d)", index, len(sentences)
+                        "Edge TTS sentence synthesis timeout (%d/%d)", index, len(sentences)
                     )
                     continue
                 except Exception as exc:
                     synthesis_failures.append((index, type(exc).__name__))
                     logging.warning(
-                        "Edge TTS 문장 합성 실패 (%d/%d): %s",
+                        "Edge TTS sentence synthesis failed (%d/%d): %s",
                         index,
                         len(sentences),
                         type(exc).__name__,
@@ -330,7 +344,7 @@ class EdgeTTS(QObject):
                 elif not stop_event.is_set():
                     synthesis_failures.append((index, "empty audio"))
                     logging.warning(
-                        "Edge TTS 문장 합성 결과가 비었습니다 (%d/%d)",
+                        "Edge TTS sentence synthesis result was empty (%d/%d)",
                         index,
                         len(sentences),
                     )
@@ -364,7 +378,7 @@ class EdgeTTS(QObject):
     def speak(
         self,
         text: str,
-        emotion: str = "평온",
+        emotion: str = DEFAULT_EMOTION,
         stop_event: threading.Event | None = None,
     ) -> bool:
         sentences = split_sentences(text)
@@ -391,8 +405,8 @@ class EdgeTTS(QObject):
             language = get_language()
             cacheable_messages = self._fixed_message_texts()
         except (ImportError, RuntimeError, TypeError, ValueError) as exc:
-            logging.warning("Edge TTS 문구 캐시 준비 실패: %s", exc)
-            language = "ko"
+            logging.warning("Edge TTS phrase cache preparation failed: %s", exc)
+            language = "en"
             cacheable_messages = frozenset()
 
         producer = threading.Thread(
@@ -434,7 +448,7 @@ class EdgeTTS(QObject):
                     break
                 played_audio = True
         except (OSError, RuntimeError, TypeError, ValueError) as exc:
-            logging.error("Edge TTS 오디오 재생 실패: %s", exc)
+            logging.error("Edge TTS audio playback failed: %s", exc)
             success = False
         finally:
             if stop_event.is_set():
@@ -459,7 +473,7 @@ class EdgeTTS(QObject):
                 for index, reason in synthesis_failures
             )
             logging.warning(
-                "Edge TTS 문장 합성 결과: %d/%d 실패 (%s)",
+                "Edge TTS sentence synthesis result: %d/%d failed (%s)",
                 len(synthesis_failures),
                 len(sentences),
                 failed_sentences,
@@ -468,7 +482,7 @@ class EdgeTTS(QObject):
 
         if played_audio and success:
             logging.info(
-                "[TTS] Edge TTS 전체 완료: %.2fs, %d문장",
+                "[TTS] Edge TTS total completed: %.2fs, %d sentences",
                 time.monotonic() - started_at,
                 len(sentences),
             )
@@ -484,7 +498,7 @@ class EdgeTTS(QObject):
         emotion: str = DEFAULT_EMOTION,
         request_cancel_event: threading.Event | None = None,
     ) -> bool:
-        """캐시된 고정 문구만 재생하고 합성 요청은 하지 않는다."""
+        """Play only cached fixed phrase without making synthesis request."""
         if not text or (
             request_cancel_event is not None and request_cancel_event.is_set()
         ):
@@ -520,7 +534,7 @@ class EdgeTTS(QObject):
                 stream, pcm, stop_event, volume=self.tts_volume
             )
         except (OSError, RuntimeError, TypeError, ValueError) as exc:
-            logging.warning("Edge TTS 캐시 재생 실패: %s", type(exc).__name__)
+            logging.warning("Edge TTS cache playback failed: %s", type(exc).__name__)
             return False
         finally:
             if stream is not None:
@@ -528,7 +542,7 @@ class EdgeTTS(QObject):
                     with get_audio_output_lock():
                         GlobalAudio.close_stream(stream)
                 except (OSError, RuntimeError, TypeError, ValueError) as exc:
-                    logging.debug("Edge TTS 캐시 스트림 정리 실패: %s", type(exc).__name__)
+                    logging.debug("Edge TTS cache stream cleanup failed: %s", type(exc).__name__)
             with self._state_lock:
                 if self._active_stop_event is stop_event:
                     self._active_stop_event = None
@@ -616,9 +630,9 @@ class EdgeTTS(QObject):
                         cancel_event,
                     )
                 except asyncio.TimeoutError:
-                    logging.debug("Edge TTS 고정 문구 캐시 사전 합성 시간 초과")
+                    logging.debug("Edge TTS fixed phrase cache pre-synthesis timeout")
                 except Exception as exc:
-                    logging.debug("Edge TTS 고정 문구 캐시 사전 합성 실패: %s", exc)
+                    logging.debug("Edge TTS fixed phrase cache pre-synthesis failed: %s", exc)
         finally:
             try:
                 loop.run_until_complete(loop.shutdown_asyncgens())
@@ -645,4 +659,4 @@ class EdgeTTS(QObject):
             stop_event.set()
             if threading.current_thread() is not self._playback_thread:
                 self._speak_finished.wait(timeout=2.0)
-        # 전역 PyAudio 인스턴스는 AriCore.cleanup()의 GlobalAudio.terminate()에서만 종료한다.
+        # Global PyAudio instance is terminated only in AriCore.cleanup() via GlobalAudio.terminate().
