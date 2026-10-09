@@ -61,7 +61,7 @@ class LLMProvider:
                 _PROVIDER_CONFIG if provider_configs is None else provider_configs
             ).items()
         }
-        self.model = model.strip()
+        self.model = model.strip() or self.provider_configs.get(provider, {}).get("default_model", "")
         # 역할별 제공자 (비어있으면 기본 제공자 사용)
         self.planner_provider = planner_provider.strip() or provider
         self.execution_provider = execution_provider.strip() or provider
@@ -179,9 +179,8 @@ class LLMProvider:
                     kwargs["base_url"] = self._get_ollama_url()
                 elif cfg.get("base_url"):
                     kwargs["base_url"] = cfg["base_url"]
-                if self._is_custom_provider(provider) and not api_key:
-                    # OpenAI SDK는 키를 필수로 받지만 로컬 서버 설정에서는 키가 선택 사항입니다.
-                    kwargs["api_key"] = "custom-provider"
+                if (provider in {"ollama", "ari_cloud"} or not cfg.get("requires_api_key", True) or self._is_custom_provider(provider)) and not kwargs.get("api_key"):
+                    kwargs["api_key"] = "ari-cloud-key"
                 if provider == "openrouter":
                     kwargs["default_headers"] = {
                         "HTTP-Referer": "https://github.com/Ari-Assistant",

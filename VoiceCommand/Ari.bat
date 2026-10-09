@@ -22,7 +22,7 @@ set "ARI_LOG=%~dp0.ari_runtime\launcher_error.log"
 
 rem "start" launches pythonw detached from this cmd window, so this .bat
 rem exits immediately afterward and its own window closes right away.
-start "" /min "%ARI_PYTHON%" "%~dp0Main.py" 2>"%ARI_LOG%"
+start "" "%ARI_PYTHON%" "%~dp0Main.py" 2>>"%ARI_LOG%"
 exit /b 0
 
 :no_venv

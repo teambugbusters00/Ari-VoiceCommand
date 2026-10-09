@@ -323,7 +323,8 @@ class CharacterWidget(QWidget):
 
         # 화면 하단으로 이동
         self.move_to_bottom()
-        self.show()
+        self.showNormal()
+        self.raise_()
         if self._activity_locked and ConfigManager.get(
             "activity_session_lock_reaction_enabled", True
         ):

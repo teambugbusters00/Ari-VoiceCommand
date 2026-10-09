@@ -178,7 +178,12 @@ def setup_logging():
         log_error = exc
 
     if sys.stdout is not None:
-        handlers.append(logging.StreamHandler(sys.stdout))
+        try:
+            import io
+            stream = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace", line_buffering=True)
+            handlers.append(logging.StreamHandler(stream))
+        except Exception:
+            handlers.append(logging.StreamHandler(sys.stdout))
     elif not handlers:
         handlers.append(logging.NullHandler())
 
@@ -463,6 +468,9 @@ def main():
         if character is not None:
             character.show()
             character.raise_()
+        if text_interface is not None:
+            text_interface.show()
+            text_interface.activateWindow()
 
     def _cleanup(label, callback):
         nonlocal cleanup_failed, exit_code
@@ -771,6 +779,13 @@ def main():
             tray_icon.set_text_interface(text_interface)
             # 캐릭터 우클릭 메뉴를 트레이 메뉴와 공유 (플러그인 액션 포함)
             character.set_tray_menu(tray_icon.menu)
+
+        if text_interface is not None:
+            text_interface.show()
+            text_interface.activateWindow()
+        if character is not None:
+            character.show()
+            character.raise_()
 
         if is_release_build():
             from core.VoiceCommand import is_game_mode, is_tts_playing
