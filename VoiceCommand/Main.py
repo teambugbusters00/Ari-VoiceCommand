@@ -466,11 +466,18 @@ def main():
 
     def _show_character():
         if character is not None:
-            character.show()
+            character.showNormal()
             character.raise_()
+            character.activateWindow()
+            try:
+                character.say("Namaste! Ari is here.", duration=3000)
+            except Exception:
+                pass
         if text_interface is not None:
-            text_interface.show()
+            screen_geom = QApplication.primaryScreen().geometry()
+            text_interface.show_near(screen_geom.width() - 450, screen_geom.height() - 350)
             text_interface.activateWindow()
+            text_interface.raise_()
 
     def _cleanup(label, callback):
         nonlocal cleanup_failed, exit_code
@@ -781,11 +788,18 @@ def main():
             character.set_tray_menu(tray_icon.menu)
 
         if text_interface is not None:
-            text_interface.show()
+            screen_geom = app.primaryScreen().geometry()
+            text_interface.show_near(screen_geom.width() - 450, screen_geom.height() - 350)
             text_interface.activateWindow()
+            text_interface.raise_()
         if character is not None:
-            character.show()
+            character.showNormal()
             character.raise_()
+            character.activateWindow()
+            try:
+                character.say("Namaste! Ari is ready.", duration=4000)
+            except Exception:
+                pass
 
         if is_release_build():
             from core.VoiceCommand import is_game_mode, is_tts_playing
